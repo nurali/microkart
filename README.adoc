@@ -1,1 +1,3 @@
 # MicroKart
+
+Run make commands to build and run microkart app.
