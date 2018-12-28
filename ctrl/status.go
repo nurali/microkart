@@ -1,6 +1,11 @@
 package ctrl
 
-import "net/http"
+import (
+	"database/sql"
+	"net/http"
+
+	log "github.com/sirupsen/logrus"
+)
 
 type StatusCtrl interface {
 	BaseCtrl
@@ -9,10 +14,11 @@ type StatusCtrl interface {
 
 type statusCtrl struct {
 	baseCtrl
+	db *sql.DB
 }
 
-func NewStatusCtrl() StatusCtrl {
-	c := new(statusCtrl)
+func NewStatusCtrl(db *sql.DB) StatusCtrl {
+	c := &statusCtrl{db: db}
 	return c
 }
 
@@ -21,5 +27,11 @@ func (c *statusCtrl) Name() string {
 }
 
 func (c *statusCtrl) Show(rw http.ResponseWriter, r *http.Request) {
-	rw.Write([]byte("Welcome to MicroKart, Status OK"))
+	err := c.db.Ping()
+	if err != nil {
+		log.Errorf("db not up, error:%v", err)
+		rw.Write([]byte("Welcome to MicroKart !!!\nStatus: Error, Message: DB is not up"))
+		return
+	}
+	rw.Write([]byte("Welcome to MicroKart !!!\nStatus: OK"))
 }

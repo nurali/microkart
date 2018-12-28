@@ -4,6 +4,7 @@ build:
 
 .PHONY: run
 run: build
+	docker-compose up -d db
 	./bin/micorkart	
 
 .PHONY: clean
