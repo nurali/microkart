@@ -1,0 +1,45 @@
+@startuml
+
+entity Customer as customer
+
+participant Browser as browser
+participant "Auth Service" as auth 
+participant "Catalog Service" as catalog
+participant "Stock Service" as stock
+participant "Order Service" as order
+participant "Wallet Service" as wallet
+
+customer -> browser : login
+browser -> auth : validate user
+browser <-- auth
+browser -> catalog : list catalog
+catalog -> stock : get stock and price
+catalog <-- stock
+browser <-- catalog
+customer <-- browser : item view
+|||
+loop
+customer -> browser : add item to kart
+browser -> order : add item to order
+browser <-- order
+customer <-- browser : item view
+end
+|||
+customer -> browser : checkout kart
+browser -> order : get order details
+browser <-- order
+customer <-- browser : kart view
+|||
+customer -> browser : payment
+browser -> wallet : wallet balance
+browser <-- wallet
+customer <-- browser : payment summary
+|||
+customer -> browser : order payment
+browser -> order : order payment
+order -> wallet : reduce balance
+order -> stock : reduce stock
+browser <-- order
+customer <-- browser : payment confirmation
+
+@enduml
