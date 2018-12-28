@@ -1,1 +1,4 @@
 bin/
+
+/debug
+**/debug.test

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/nurali/microkart/common/middleware"
 	"github.com/nurali/microkart/config"
 	"github.com/nurali/microkart/ctrl"
 	log "github.com/sirupsen/logrus"
@@ -26,17 +27,18 @@ func initLogger(logLevel string) {
 }
 
 func mountEndpoints() *http.ServeMux {
+	wrapper := middleware.Chain(middleware.RequestID, middleware.Recover, middleware.Logger)
 	mux := http.NewServeMux()
 
 	statusCtrl := ctrl.NewStatusCtrl()
 	log.Infof("mounted:%s", statusCtrl.Name())
-	mux.HandleFunc("/api/status", statusCtrl.Show)
+	mux.HandleFunc("/api/status", wrapper(statusCtrl.Show))
 
 	loginCtrl := ctrl.NewLoginCtrl()
 	log.Infof("mounted:%s", loginCtrl.Name())
-	mux.HandleFunc("/api/login/login", loginCtrl.Login)
-	mux.HandleFunc("/api/login/logout", loginCtrl.Logout)
-	mux.HandleFunc("/api/login/signup", loginCtrl.Signup)
+	mux.HandleFunc("/api/login/login", wrapper(loginCtrl.Login))
+	mux.HandleFunc("/api/login/logout", wrapper(loginCtrl.Logout))
+	mux.HandleFunc("/api/login/signup", wrapper(loginCtrl.Signup))
 
 	return mux
 }
