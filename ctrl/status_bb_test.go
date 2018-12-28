@@ -5,13 +5,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nurali/microkart/ctrl"
 )
 
 var statusCtrl = ctrl.NewStatusCtrl()
 
 func TestStatusShow(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+	req, err := http.NewRequest(http.MethodGet, "/api/status", nil)
+	require.NoError(t, err)
 	res := httptest.NewRecorder()
 	handler := http.HandlerFunc(statusCtrl.Show)
 

@@ -32,6 +32,12 @@ func mountEndpoints() *http.ServeMux {
 	log.Infof("mounted:%s", statusCtrl.Name())
 	mux.HandleFunc("/api/status", statusCtrl.Show)
 
+	loginCtrl := ctrl.NewLoginCtrl()
+	log.Infof("mounted:%s", loginCtrl.Name())
+	mux.HandleFunc("/api/login/login", loginCtrl.Login)
+	mux.HandleFunc("/api/login/logout", loginCtrl.Logout)
+	mux.HandleFunc("/api/login/signup", loginCtrl.Signup)
+
 	return mux
 }
 
