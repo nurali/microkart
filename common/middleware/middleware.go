@@ -31,7 +31,7 @@ func Chain(mw ...Middleware) Middleware {
 func RequestID(next http.HandlerFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		id, _ := uuid.NewV4()
-		rw.Header().Set(RequestIDHeader, id.String())
+		r.Header.Set(RequestIDHeader, id.String())
 		next(rw, r)
 	}
 }
