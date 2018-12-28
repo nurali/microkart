@@ -5,27 +5,34 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/nurali/microkart/ctrl"
 )
 
-var statusCtrl = ctrl.NewStatusCtrl()
+type StatusCtrlSuite struct {
+	suite.Suite
+	ctrl ctrl.StatusCtrl
+}
 
-func TestStatusShow(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "/api/status", nil)
-	require.NoError(t, err)
-	res := httptest.NewRecorder()
-	handler := http.HandlerFunc(statusCtrl.Show)
+func TestStatusCtrl(t *testing.T) {
+	suite.Run(t, &StatusCtrlSuite{ctrl: ctrl.NewStatusCtrl()})
+}
 
-	handler.ServeHTTP(res, req)
+func (s *StatusCtrlSuite) TestStatusShow() {
+	handler := http.HandlerFunc(s.ctrl.Show)
 
-	if status := res.Code; status != http.StatusOK {
-		t.Errorf("call to show status failed with unexpected status code, got:%d, want:%d", status, http.StatusOK)
-	}
+	s.T().Run("ok", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, "/api/status", nil)
+		require.NoError(t, err)
+		res := httptest.NewRecorder()
 
-	expected := "Welcome to MicroKart, Status OK"
-	if res.Body.String() != expected {
-		t.Errorf("call to show status failed with unexpected response, got:%s, want:%s", res.Body.String(), expected)
-	}
+		handler.ServeHTTP(res, req)
+
+		assert.Equalf(t, http.StatusOK, res.Code, "unexpected status code")
+		expected := "Welcome to MicroKart, Status OK"
+		assert.Equalf(t, expected, res.Body.String(), "unexpected response body")
+	})
 }
