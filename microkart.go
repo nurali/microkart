@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -32,10 +33,31 @@ func initLogger(logLevel string) {
 }
 
 func setupDb(dbConfig string) *sql.DB {
+	// open db conn
 	db, err := sql.Open("postgres", dbConfig)
 	if err != nil {
 		log.Panicf("db open failed, err:%v", err)
 	}
+
+	// create tables
+	sqlPath := "./db/sql"
+	fileInfos, err := ioutil.ReadDir(sqlPath)
+	if err != nil {
+		log.Panicf("db setup failed, err:%v", err)
+	}
+
+	for _, fileInfo := range fileInfos {
+		content, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", sqlPath, fileInfo.Name()))
+		if err != nil {
+			log.Panicf("db setup failed, err:%v", err)
+		}
+		sql := string(content)
+		_, err = db.Exec(sql)
+		if err != nil {
+			log.Panicf("db setup failed, err:%v", err)
+		}
+	}
+	log.Infof("db setup successfully")
 	return db
 }
 
