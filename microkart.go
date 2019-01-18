@@ -69,7 +69,7 @@ func mountEndpoints(db *sql.DB) *http.ServeMux {
 	log.Infof("mounted:%s", statusCtrl.Name())
 	mux.HandleFunc("/api/status", wrapper(statusCtrl.Show))
 
-	loginCtrl := ctrl.NewLoginCtrl()
+	loginCtrl := ctrl.NewLoginCtrl(db)
 	log.Infof("mounted:%s", loginCtrl.Name())
 	mux.HandleFunc("/api/login/login", wrapper(loginCtrl.Login))
 	mux.HandleFunc("/api/login/logout", wrapper(loginCtrl.Logout))

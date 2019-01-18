@@ -1,10 +1,12 @@
 package ctrl
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"strings"
 
+	"github.com/nurali/microkart/model"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,12 +19,13 @@ type LoginCtrl interface {
 
 type loginCtrl struct {
 	baseCtrl
-	users map[string]string
+	repo model.Respository
 }
 
-func NewLoginCtrl() LoginCtrl {
-	c := new(loginCtrl)
-	c.users = make(map[string]string)
+func NewLoginCtrl(db *sql.DB) LoginCtrl {
+	c := &loginCtrl{
+		repo: model.NewRepository(db),
+	}
 	return c
 }
 
@@ -33,12 +36,21 @@ func (c *loginCtrl) Name() string {
 func (c *loginCtrl) Login(rw http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	if username == "" {
+		log.Errorf("username is missing")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	passwd := c.users[username]
-	if passwd == "" {
+	user, err := c.repo.Load(username)
+	if err != nil {
+		log.Errorf("load user failed, err:%v", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	passwd := user.Passwd
+	if passwd == nil {
+		log.Errorf("user not found")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -48,7 +60,8 @@ func (c *loginCtrl) Login(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if userPasswd != passwd {
+	if userPasswd != *passwd {
+		log.Errorf("wrong password")
 		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -63,11 +76,21 @@ func (c *loginCtrl) Logout(rw http.ResponseWriter, r *http.Request) {
 func (c *loginCtrl) Signup(rw http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	if username == "" {
+		log.Errorf("username is missing")
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if c.users[username] != "" {
+	user, err := c.repo.Load(username)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Errorf("load user failed, err:%v", err)
+			rw.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+	if user != nil {
+		log.Errorf("username '%s' already exists", username)
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write([]byte("username already exists"))
 		return
@@ -75,11 +98,21 @@ func (c *loginCtrl) Signup(rw http.ResponseWriter, r *http.Request) {
 
 	passwd, err := extractPasswd(r.Header.Get("Authorization"))
 	if err != nil {
-		rw.WriteHeader(http.StatusBadRequest)
+		log.Errorf("authentication is missing, err:%v", err)
+		rw.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	c.users[username] = passwd
+	newUser := &model.User{
+		Name:   &username,
+		Passwd: &passwd,
+	}
+	_, err = c.repo.Create(newUser)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("db insert operation failed"))
+		return
+	}
 
 	return
 }

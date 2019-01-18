@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/nurali/microkart/common/test"
+	"github.com/nurali/microkart/config"
 	"github.com/nurali/microkart/ctrl"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,12 +14,20 @@ import (
 )
 
 type LoginCtrlSuite struct {
-	suite.Suite
+	test.DBSuite
 	ctrl ctrl.LoginCtrl
 }
 
 func TestLoginCtrl(t *testing.T) {
-	suite.Run(t, &LoginCtrlSuite{ctrl: ctrl.NewLoginCtrl()})
+	config := config.New()
+	suite.Run(t, &LoginCtrlSuite{
+		DBSuite: test.NewDBSuite(config),
+	})
+}
+
+func (s *LoginCtrlSuite) SetupSuite() {
+	s.DBSuite.SetupSuite()
+	s.ctrl = ctrl.NewLoginCtrl(s.DB)
 }
 
 func (s *LoginCtrlSuite) Test1Signup() {
